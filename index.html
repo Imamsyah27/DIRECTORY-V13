@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#4F46E5">
+<meta name="description" content="Lenstore Management Dashboard — kelola pesanan &amp; arsip dengan mudah">
+<title>Lenstore Management Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-mark">LS</div>
+            <div class="brand-text">
+                <h1>Lenstore Management Dashboard</h1>
+                <span>Kelola pesanan &amp; pengiriman harian</span>
+            </div>
+        </div>
+
+        <nav class="page-nav" id="pageNav">
+            <button type="button" class="active" data-page="dashboard">
+                <span class="nav-icon">📊</span><span class="nav-label">Dashboard Aktif</span>
+            </button>
+            <button type="button" data-page="arsip">
+                <span class="nav-icon">🗂️</span><span class="nav-label">Data Arsip</span> <span class="badge-count" id="archiveCountBadge">0</span>
+            </button>
+            <button type="button" data-page="produk">
+                <span class="nav-icon">📦</span><span class="nav-label">Produk</span>
+            </button>
+            <button type="button" data-page="tagar">
+                <span class="nav-icon">🏷️</span><span class="nav-label">Tagar</span>
+            </button>
+            <button type="button" data-page="akun">
+                <span class="nav-icon">👤</span><span class="nav-label">Akun Pelanggan</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- ============ VIEW: DASHBOARD AKTIF ============ -->
+    <section class="view active" id="view-dashboard">
+
+        <nav class="dashboard-tabs" id="dashboardTabs">
+            <button type="button" class="tab active" data-dashboard="BEM">BEM</button>
+            <button type="button" class="tab" data-dashboard="LEM">LEM</button>
+            <button type="button" class="tab" data-dashboard="SEM">SEM</button>
+        </nav>
+
+        <section class="stats">
+            <div class="stat-card total" onclick="applyStatusFilter('semua')" title="Tampilkan semua status" style="cursor:pointer;">
+                <div class="stat-top">
+                    <h3>Total Pesanan</h3>
+                    <div class="stat-icon">📦</div>
+                </div>
+                <span class="value" id="totalOrder">0</span>
+            </div>
+
+            <div class="stat-card proses" onclick="applyStatusFilter('proses')" title="Filter: Proses" style="cursor:pointer;">
+                <div class="stat-top">
+                    <h3>Proses</h3>
+                    <div class="stat-icon">⏳</div>
+                </div>
+                <span class="value" id="prosesOrder">0</span>
+            </div>
+
+            <div class="stat-card limit" onclick="applyStatusFilter('mendekati')" title="Filter: Mendekati Limit" style="cursor:pointer;">
+                <div class="stat-top">
+                    <h3>Mendekati Limit</h3>
+                    <div class="stat-icon">⚠️</div>
+                </div>
+                <span class="value" id="limitOrder">0</span>
+            </div>
+
+            <div class="stat-card selesai" onclick="applyStatusFilter('selesai')" title="Filter: Limit Tercapai" style="cursor:pointer;">
+                <div class="stat-top">
+                    <h3>Selesai</h3>
+                    <div class="stat-icon">✅</div>
+                </div>
+                <span class="value" id="selesaiOrder">0</span>
+            </div>
+        </section>
+
+        <section class="panel input-section">
+            <div class="panel-title">➕ Tambah Pesanan Baru</div>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="orderNumber">Nama Pemesan</label>
+                    <input type="text" id="orderNumber" placeholder="cth. Andi Saputra">
+                </div>
+                <div class="field">
+                    <label for="hashtag">Tagar / Kategori</label>
+                    <input type="text" id="hashtag" placeholder="cth. #lensbulanan">
+                </div>
+                <div class="field">
+                    <label for="whatsapp">Nomor WhatsApp</label>
+                    <input type="text" id="whatsapp" placeholder="+628xxxxxxxxxx">
+                </div>
+                <div class="field">
+                    <label for="packageTotal">Jumlah Paket (Limit)</label>
+                    <input type="number" id="packageTotal" placeholder="cth. 5" min="1">
+                </div>
+            </div>
+            <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+                <button class="btn btn-primary" id="addData">Tambah Pesanan</button>
+            </div>
+        </section>
+
+        <section class="panel table-section">
+            <div class="panel-title">📋 Daftar Pesanan Aktif</div>
+
+            <div class="toolbar">
+                <div class="search-wrap">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Cari nama pemesan, tagar, atau nomor WA...">
+                </div>
+                <select id="statusFilterSelect" class="filter-select" title="Filter berdasarkan status">
+                    <option value="semua">Semua Status</option>
+                    <option value="proses">⏳ Proses</option>
+                    <option value="mendekati">⚠️ Mendekati Limit</option>
+                    <option value="selesai">✅ Limit Tercapai</option>
+                </select>
+                <div class="toolbar-actions">
+                    <button type="button" class="btn btn-outline" id="copyAllTagsBtn">📑 Salin Semua Tagar</button>
+                    <button type="button" class="btn btn-success" id="checkAllBtn">✅ Ceklis Semua</button>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table id="dashboardTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Pemesan</th>
+                            <th>Tagar</th>
+                            <th>WhatsApp</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="state-block" id="tableLoadingState" style="display:none;">
+                <div class="spinner"></div>
+                <div class="state-title">Memuat data pesanan...</div>
+            </div>
+
+            <div class="state-block" id="tableEmptyState" style="display:none;">
+                <div class="state-icon">🗒️</div>
+                <div class="state-title">Belum ada pesanan aktif</div>
+                <div class="state-sub">Tambahkan pesanan baru lewat form di atas, atau ubah kata kunci pencarian Anda.</div>
+            </div>
+        </section>
+    </section>
+
+    <!-- ============ VIEW: DATA ARSIP ============ -->
+    <section class="view" id="view-arsip">
+
+        <section class="panel">
+            <div class="panel-title">🗂️ Data Arsip</div>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin-top:-8px; margin-bottom:16px;">
+                Pesanan yang telah mencapai limit dan dipindahkan dari daftar aktif akan tersimpan di sini.
+            </p>
+
+            <div class="toolbar">
+                <div class="search-wrap">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="archiveSearchInput" placeholder="Cari di data arsip...">
+                </div>
+                <select class="filter-select" id="archiveFilterDashboard">
+                    <option value="ALL">Semua Dashboard</option>
+                    <option value="BEM">BEM</option>
+                    <option value="LEM">LEM</option>
+                    <option value="SEM">SEM</option>
+                </select>
+                <select class="filter-select" id="archiveSort">
+                    <option value="newest">Terbaru Diarsipkan</option>
+                    <option value="oldest">Terlama Diarsipkan</option>
+                    <option value="name">Nama A-Z</option>
+                </select>
+            </div>
+
+            <div class="archive-grid" id="archiveGrid"></div>
+
+            <div class="state-block" id="archiveEmptyState" style="display:none;">
+                <div class="state-icon">📭</div>
+                <div class="state-title">Belum ada data arsip</div>
+                <div class="state-sub">Pesanan yang sudah mencapai limit pengiriman bisa dipindahkan ke sini lewat tombol "Simpan ke Arsip".</div>
+            </div>
+        </section>
+    </section>
+
+    <!-- ============ VIEW: PRODUK ============ -->
+    <section class="view" id="view-produk">
+
+        <nav class="dashboard-tabs" id="produkCategoryTabs">
+            <button type="button" class="tab active" data-kategori="10BOX">📦 Akun 10 BOX</button>
+            <button type="button" class="tab" data-kategori="9BOX">📦 Akun 9 BOX</button>
+        </nav>
+
+        <nav class="dashboard-tabs" id="produkDashboardTabs" style="margin-top:10px;">
+            <button type="button" class="tab active" data-produk-dashboard="BEM">BEM</button>
+            <button type="button" class="tab" data-produk-dashboard="LEM">LEM</button>
+            <button type="button" class="tab" data-produk-dashboard="SEM">SEM</button>
+        </nav>
+
+        <section class="stats">
+            <div class="stat-card total">
+                <div class="stat-top">
+                    <h3>Total Produk</h3>
+                    <div class="stat-icon">📦</div>
+                </div>
+                <span class="value" id="produkTotal">0</span>
+            </div>
+
+            <div class="stat-card proses">
+                <div class="stat-top">
+                    <h3>Total Akun Terpakai</h3>
+                    <div class="stat-icon">🔢</div>
+                </div>
+                <span class="value" id="produkTerpakai">0</span>
+            </div>
+
+            <div class="stat-card limit">
+                <div class="stat-top">
+                    <h3>Menunggu Keputusan</h3>
+                    <div class="stat-icon">⚠️</div>
+                </div>
+                <span class="value" id="produkMenunggu">0</span>
+            </div>
+
+            <div class="stat-card selesai">
+                <div class="stat-top">
+                    <h3>Sudah Diputuskan</h3>
+                    <div class="stat-icon">✅</div>
+                </div>
+                <span class="value" id="produkSelesai">0</span>
+            </div>
+        </section>
+
+        <section class="panel input-section">
+            <div class="panel-title">➕ Tambah Produk Baru</div>
+            <div class="field-grid produk-field-grid">
+                <div class="field">
+                    <label for="produkNama">Nama Produk / Batch</label>
+                    <input type="text" id="produkNama" placeholder="cth. NEW BEM VOL 2">
+                </div>
+                <div class="field">
+                    <label for="produkJumlah">Jumlah Akun (Kapasitas)</label>
+                    <input type="number" id="produkJumlah" placeholder="cth. 100" min="1">
+                </div>
+            </div>
+            <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+                <button class="btn btn-primary" id="addProduk">Tambah Produk</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-title">🔍 Cari Posisi Tagar Akun</div>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin-top:-8px; margin-bottom:14px;">
+                Lupa tagar tertentu ada di produk mana dan akun urutan ke berapa? Tempel atau ketik
+                tagarnya di sini — pencarian mencakup <b>semua produk</b>, semua kategori (10 BOX/9 BOX)
+                dan semua dashboard (BEM/LEM/SEM) sekaligus.
+            </p>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="cariTagarPosisiInput" placeholder="Ketik atau tempel tagar akun..." style="flex:1; padding:11px 13px; border-radius:10px; border:1.5px solid var(--border); font-size:14px; font-family:var(--font-body);">
+                <button type="button" class="btn btn-primary" id="cariTagarPosisiBtn">Cari</button>
+            </div>
+            <div id="cariTagarPosisiResult" style="margin-top:14px;"></div>
+        </section>
+
+        <section class="panel table-section">
+            <div class="panel-title">📋 Daftar Produk — <span id="produkPanelLabel">Akun 10 BOX &middot; BEM</span></div>
+
+            <div class="toolbar">
+                <div class="search-wrap">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="produkSearchInput" placeholder="Cari nama produk atau tagar error...">
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table id="produkTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Produk</th>
+                            <th>Kapasitas</th>
+                            <th>Tagar Error</th>
+                            <th>Keterangan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="produkTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="state-block" id="produkLoadingState" style="display:none;">
+                <div class="spinner"></div>
+                <div class="state-title">Memuat data produk...</div>
+            </div>
+
+            <div class="state-block" id="produkEmptyState" style="display:none;">
+                <div class="state-icon">📦</div>
+                <div class="state-title">Belum ada produk di kategori ini</div>
+                <div class="state-sub">Tambahkan produk baru lewat form di atas, misalnya "NEW BEM VOL 2" dengan kapasitas 100 akun.</div>
+            </div>
+        </section>
+    </section>
+
+    <!-- ============ VIEW: TAGAR ============ -->
+    <section class="view" id="view-tagar">
+
+        <section class="panel">
+            <div class="panel-title">🏷️ Input Massal Tagar</div>
+            <p class="tagar-input-hint">
+                Tempel atau ketik daftar tagar sebanyak apa pun (satu tagar per baris, atau dipisah koma).
+                Saat diproses, tagar otomatis dibagi jadi beberapa tabel — maksimal <b>200 tagar/tabel</b>,
+                dan diusahakan tidak ada tabel di bawah <b>100 tagar</b> (kecuali jumlah tagar Anda memang
+                kurang dari 100). Duplikat akan dideteksi otomatis dan tidak dihapus — hanya dilaporkan.
+            </p>
+
+            <div class="field" style="margin-bottom:12px;">
+                <label for="tagarBulkInput">Daftar Tagar</label>
+                <textarea id="tagarBulkInput" rows="10" placeholder="cth.&#10;#lensbulanan01&#10;#lensbulanan02&#10;#lensbulanan03&#10;...(tempel sebanyak apa pun)"></textarea>
+            </div>
+
+            <div class="tagar-stats-row" style="margin-bottom:16px;">
+                <span class="chip chip-info" id="tagarLiveTotal">Total: 0</span>
+                <span class="chip chip-info" id="tagarLiveUnique">Unik: 0</span>
+                <span class="chip chip-success" id="tagarLiveDup">Tidak Ada Duplikat</span>
+                <span class="chip chip-info" id="tagarLiveGroups">Perkiraan Tabel: 0</span>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="processTagarBtn">📥 Input &amp; Bagi Tagar</button>
+        </section>
+
+        <div id="tagarActiveResult"></div>
+
+        <section class="panel">
+            <div class="panel-title">🕘 Riwayat Batch Tagar</div>
+            <div id="tagarHistoryList"></div>
+            <div class="state-block" id="tagarHistoryEmpty" style="display:none;">
+                <div class="state-icon">🏷️</div>
+                <div class="state-title">Belum ada riwayat tagar</div>
+                <div class="state-sub">Proses daftar tagar pertama Anda lewat form di atas.</div>
+            </div>
+        </section>
+    </section>
+
+    <!-- ============ VIEW: AKUN PELANGGAN ============ -->
+    <section class="view" id="view-akun">
+
+        <!-- Gerbang PIN admin -->
+        <section class="panel" id="akunPinGate">
+            <div class="panel-title">🔒 Menu Akun Pelanggan</div>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin-top:-8px; margin-bottom:16px;">
+                Menu ini khusus admin. Masukkan PIN admin untuk membuat akun login pelanggan
+                (portal terpisah di folder <code>/pelanggan</code>) yang terhubung ke data pesanan mereka.
+                PIN default pertama kali adalah <b>123456</b> — segera ganti setelah masuk.
+            </p>
+            <div class="field-grid" style="max-width:360px;">
+                <div class="field">
+                    <label for="akunPinInput">PIN Admin</label>
+                    <input type="password" id="akunPinInput" placeholder="Masukkan PIN admin" autocomplete="off">
+                </div>
+            </div>
+            <div style="margin-top:14px;">
+                <button class="btn btn-primary" id="akunPinSubmit">Masuk</button>
+            </div>
+        </section>
+
+        <!-- Konten setelah PIN benar -->
+        <div id="akunContent" style="display:none;">
+
+            <section class="panel input-section">
+                <div class="panel-title">➕ Buat Akun Pelanggan Baru</div>
+                <p style="font-size:12.5px; color:var(--text-secondary); margin-top:-8px; margin-bottom:16px;">
+                    Pilih nama pelanggan yang sudah ada di Dashboard Aktif (BEM/LEM/SEM). Nama seperti
+                    <b>"Pelanggan 88"</b> dan <b>"88"</b> otomatis dianggap sama saat login pelanggan nanti.
+                </p>
+                <div class="field-grid">
+                    <div class="field">
+                        <label for="akunPilihPelanggan">Pilih dari Pelanggan Aktif</label>
+                        <select id="akunPilihPelanggan">
+                            <option value="">— pilih pelanggan —</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="akunMatchSource">Nama / Kode Pelanggan (dipakai mencocokkan)</label>
+                        <input type="text" id="akunMatchSource" placeholder="cth. Pelanggan 88 atau 88">
+                    </div>
+                    <div class="field">
+                        <label for="akunUsername">Username Login</label>
+                        <input type="text" id="akunUsername" placeholder="cth. Pelanggan 88">
+                    </div>
+                    <div class="field">
+                        <label for="akunWhatsapp">Nomor WhatsApp (opsional, catatan admin)</label>
+                        <input type="text" id="akunWhatsapp" placeholder="+628xxxxxxxxxx">
+                    </div>
+                    <div class="field">
+                        <label for="akunPassword">Password Awal</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="text" id="akunPassword" placeholder="Minimal 6 karakter" style="flex:1;">
+                            <button type="button" class="btn btn-outline btn-icon" id="akunGeneratePw" title="Buat password acak">🎲</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:10px;">
+                    <button class="btn btn-primary" id="akunBuatBtn">Buat Akun</button>
+                </div>
+            </section>
+
+            <section class="panel table-section">
+                <div class="panel-title">📋 Daftar Akun Pelanggan</div>
+
+                <div class="toolbar">
+                    <div class="search-wrap">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="akunSearchInput" placeholder="Cari username atau nama pelanggan...">
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table id="akunTable">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Username</th>
+                                <th>Terhubung ke</th>
+                                <th>WhatsApp</th>
+                                <th>Pesanan Aktif</th>
+                                <th>Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="akunTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="state-block" id="akunLoadingState" style="display:none;">
+                    <div class="spinner"></div>
+                    <div class="state-title">Memuat akun pelanggan...</div>
+                </div>
+
+                <div class="state-block" id="akunEmptyState" style="display:none;">
+                    <div class="state-icon">👤</div>
+                    <div class="state-title">Belum ada akun pelanggan</div>
+                    <div class="state-sub">Buat akun pertama lewat form di atas.</div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-title">🔑 Ganti PIN Admin</div>
+                <div class="field-grid" style="max-width:520px;">
+                    <div class="field">
+                        <label for="akunPinLama">PIN Lama</label>
+                        <input type="password" id="akunPinLama" autocomplete="off">
+                    </div>
+                    <div class="field">
+                        <label for="akunPinBaru">PIN Baru</label>
+                        <input type="password" id="akunPinBaru" autocomplete="off">
+                    </div>
+                </div>
+                <div style="margin-top:14px;">
+                    <button class="btn btn-outline" id="akunGantiPinBtn">Simpan PIN Baru</button>
+                </div>
+            </section>
+        </div>
+    </section>
+
+</div>
+
+<!-- ============ MODAL ============ -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box" id="modalBox"></div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div id="toastStack"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/archive.js"></script>
+<script src="js/checklist.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/produk.js"></script>
+<script src="js/tagar.js"></script>
+<script src="js/akun-pelanggan.js"></script>
+<script src="js/app.js"></script>
+<script src="js/init.js"></script>
+</body>
+</html>
